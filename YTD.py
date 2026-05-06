@@ -9,18 +9,18 @@ output_directory = r'C:\Users\Home\Downloads'
 def progress_hook(d, window):
     if d['status'] == 'downloading':
         percent = d.get('_percent_str', '0%').strip()
-        percent = d.get('_percent_str', '').replace('%', '').strip()
 
         try:
             percent_value = float(percent)
         except:
             percent_value = 0.0
 
-        window['-PROG-'].update(percent_value)
-        window['-STATUS-'].update(f"Downloading... {percent}")
+        # Sends to GUI thread for progress bar
+        window.write_event_value('-PROGRESS-', percent_value)
+        window.write_event_value('STATUS', f"Downloading... {percent}%")
 
     elif d['status'] == 'finished':
-        window['-STATUS-'].update("Processing...")
+        window.write_event_value('-STATUS-', "Processing...")
 
 def download_yt_video(url, window):
     ydl_opts = {
@@ -33,7 +33,7 @@ def download_yt_video(url, window):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-        return "Download complete!"
+        window.write_event_value('-DONE-', "Download Complete!")
     except Exception as e:
         return f"Error: {e}"
     
@@ -61,10 +61,23 @@ while True:
             window['-STATUS-'].update("Starting download...")
             window.refresh()
 
-            result = download_yt_video(url, window)
-            window['-STATUS-'].update(result)
+            threading.Thread(
+                    target=download_yt_video,
+                    args=(url, window),
+                    daemon=True
+                    ).start()
         else:
             window['-STATUS-'].update("Please enter a URL.")
+
+    elif event == '-PROGRESS-':
+        window['-PROG-'].update(values['-PROGRESS-'])
+    
+    elif event == '-STATUS-':
+        window['-STATUS-'].update(values['-STATUS-'])
+
+    elif event == '-DONE-':
+        window['-STATUS-'].update(values['-DONE-'])
+        window['-PROG-'].update(100)
     
 window.close()
 
