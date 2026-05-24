@@ -49,10 +49,11 @@ def download_yt_video(url, window):
         window.write_event_value('-STATUS-', f"Error: {e}")
 
 # Window Design
+sg.theme ('DarkBlack')
 layout = [
     [sg.Text("YouTube Downloader")],
     [sg.Input(key="-URL-", size=(50,1)), sg.Button("Download")],
-    [sg.ProgressBar(100, orientation='h', size=(40, 20), key='-PROG-')],
+    [sg.ProgressBar(100, orientation='h', size=(40, 20), key='-PROG-', bar_color=('green', 'gray'))],
     [sg.Text("", key="-STATUS-")],
     [sg.Multiline(size=(60, 10), key="-LOG-", autoscroll=True ,disabled=True)]
 ]
