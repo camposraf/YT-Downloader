@@ -1,11 +1,13 @@
-import yt_dlp 
+import os
+import re
+import yt_dlp
 import PySimpleGUI as sg
 import threading
 
-# Selecting filepath
-output_directory = r'C:\Users\Home\Downloads'
+output_directory = os.path.join(os.path.expanduser("~"), "Downloads")
 
-# Custom Logger to capture yt-dlp output
+progress_line = re.compile(r'\[download\]\s*[\d.]+%')
+
 class YTDLogger:
     def __init__(self, window):
         self.window = window
@@ -13,22 +15,21 @@ class YTDLogger:
         self.window.write_event_value('-LOG-', msg)
     def warning(self, msg):
         self.window.write_event_value('-LOG-', f"WARNING: {msg}")
+    def error(self, msg):
+        self.window.write_event_value('-LOG-', f"ERROR: {msg}")
     def info(self, msg):
         self.window.write_event_value('-LOG-', f"INFO: {msg}")
 
-# Progress Bar
 def progress_hook(d, window):
     if d['status'] == 'downloading':
-        # Use raw numbers for accuracy
         downloaded = d.get('downloaded_bytes', 0)
-        total = d.get('total_bytes', 1)
-        percent_value = downloaded / total * 100
+        total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0
+        percent_value = (downloaded / total * 100) if total else 0
+        percent_value = min(100.0, max(0.0, percent_value))
 
         percent_str = f"{percent_value:.2f}%"
         window.write_event_value('-PROGRESS-', percent_value)
         window.write_event_value('-STATUS-', f"Downloading... {percent_str}")
-        window.write_event_value('-LOG-', d.get('info_dict', {}).get('title', ''))
-
     elif d['status'] == 'finished':
         window.write_event_value('-STATUS-', "Processing...")
 
@@ -40,7 +41,6 @@ def download_yt_video(url, window):
         'progress_hooks': [lambda d: progress_hook(d, window)],
         'logger': YTDLogger(window)
     }
-
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
@@ -48,52 +48,55 @@ def download_yt_video(url, window):
     except Exception as e:
         window.write_event_value('-STATUS-', f"Error: {e}")
 
-# Window Design
-sg.theme ('DarkBlack')
+sg.theme('DarkBlack')
 layout = [
     [sg.Text("YouTube Downloader")],
     [sg.Input(key="-URL-", size=(50,1)), sg.Button("Download")],
     [sg.ProgressBar(100, orientation='h', size=(40, 20), key='-PROG-', bar_color=('green', 'gray'))],
     [sg.Text("", key="-STATUS-")],
-    [sg.Multiline(size=(60, 10), key="-LOG-", autoscroll=True ,disabled=True)]
+    [sg.Multiline(size=(60, 10), key="-LOG-", autoscroll=True, disabled=True)]
 ]
 
 window = sg.Window("YT Downloader by Valkyrie Softworks", layout)
+last_progress = 0
 
-# Event Loop
 while True:
     event, values = window.read()
-
     if event == sg.WINDOW_CLOSED:
         break
 
     if event == "Download":
         url = values["-URL-"].strip()
         if url:
+            last_progress = 0
             window['-PROG-'].update(0)
             window['-STATUS-'].update("Starting download...")
             window.refresh()
-
-            threading.Thread(
-                    target=download_yt_video,
-                    args=(url, window),
-                    daemon=True
-                    ).start()
+            threading.Thread(target=download_yt_video, args=(url, window), daemon=True).start()
         else:
             window['-STATUS-'].update("Please enter a URL.")
 
     elif event == '-PROGRESS-':
-        window['-PROG-'].update(values['-PROGRESS-'])
-    
+        last_progress = max(values['-PROGRESS-'], last_progress)
+        window['-PROG-'].update(last_progress)
+
     elif event == '-STATUS-':
         window['-STATUS-'].update(values['-STATUS-'])
 
     elif event == '-LOG-':
-        window['-LOG-'].update(values['-LOG-'] + "\n", append=True)
+        msg = values['-LOG-']
+        if progress_line.search(msg):
+            lines = window['-LOG-'].get().split('\n')
+            if lines and progress_line.search(lines[-1]):
+                lines[-1] = msg
+                window['-LOG-'].update('\n'.join(lines))
+            else:
+                window['-LOG-'].update(msg + "\n", append=True)
+        else:
+            window['-LOG-'].update(msg + "\n", append=True)
 
     elif event == '-DONE-':
         window['-STATUS-'].update(values['-DONE-'])
         window['-PROG-'].update(100)
-    
-window.close()
 
+window.close()
