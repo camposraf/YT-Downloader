@@ -1,13 +1,17 @@
+## Standard Video Downloader by Valkyrie Softworks (est. 2024) ##
 import os
 import re
 import yt_dlp
 import PySimpleGUI as sg
 import threading
 
+# Set the default output directory to the user's Downloads folder
 output_directory = os.path.join(os.path.expanduser("~"), "Downloads")
 
+# Regular expression to match progress lines in the log
 progress_line = re.compile(r'\[download\]\s*[\d.]+%')
 
+# Custom logger class to handle logging messages to the GUI window
 class YTDLogger:
     def __init__(self, window):
         self.window = window
@@ -20,6 +24,7 @@ class YTDLogger:
     def info(self, msg):
         self.window.write_event_value('-LOG-', f"INFO: {msg}")
 
+# Function to handle progress updates from yt_dlp and update the GUI window
 def progress_hook(d, window):
     if d['status'] == 'downloading':
         downloaded = d.get('downloaded_bytes', 0)
@@ -33,6 +38,7 @@ def progress_hook(d, window):
     elif d['status'] == 'finished':
         window.write_event_value('-STATUS-', "Processing...")
 
+# Function to download a YouTube video using yt_dlp and update the GUI window
 def download_yt_video(url, window):
     ydl_opts = {
         'format': 'bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b',
@@ -48,18 +54,21 @@ def download_yt_video(url, window):
     except Exception as e:
         window.write_event_value('-STATUS-', f"Error: {e}")
 
+# GUI layout and event loop
 sg.theme('DarkBlack')
 layout = [
-    [sg.Text("YouTube Downloader")],
+    [sg.Text("Standard Video Downloader")],
     [sg.Input(key="-URL-", size=(50,1)), sg.Button("Download")],
     [sg.ProgressBar(100, orientation='h', size=(40, 20), key='-PROG-', bar_color=('green', 'gray'))],
     [sg.Text("", key="-STATUS-")],
     [sg.Multiline(size=(60, 10), key="-LOG-", autoscroll=True, disabled=True)]
 ]
 
-window = sg.Window("YT Downloader by Valkyrie Softworks", layout)
+# Create the main window
+window = sg.Window("Standard Video Downloader", layout)
 last_progress = 0
 
+# Event loop to handle user interactions and update the GUI
 while True:
     event, values = window.read()
     if event == sg.WINDOW_CLOSED:
