@@ -1,2 +1,5 @@
 *.html linguist-detectable=false
+*.toc linguist-detectable=false
+*.aux linguist-detectable=false
+*.log linguist-detectable=false
 *.py linguist-language=Python
