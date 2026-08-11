@@ -1,0 +1,22 @@
+YTD.spec
+.vscode/
+build/
+dist/
+YTD.spec
+.vscode/settings.json
+build/YTD/Analysis-00.toc
+build/YTD/base_library.zip
+build/YTD/EXE-00.toc
+build/YTD/PKG-00.toc
+build/YTD/PYZ-00.pyz
+build/YTD/PYZ-00.toc
+build/YTD/warn-YTD.txt
+build/YTD/xref-YTD.html
+build/YTD/YTD.pkg
+build/YTD/localpycs/pyimod01_archive.pyc
+build/YTD/localpycs/pyimod02_importers.pyc
+build/YTD/localpycs/pyimod03_ctypes.pyc
+build/YTD/localpycs/pyimod04_pywin32.pyc
+build/YTD/localpycs/struct.pyc
+dist/YTD.exe
+dist/YTD.exe - Shortcut.lnk

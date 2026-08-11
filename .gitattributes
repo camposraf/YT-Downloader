@@ -2,4 +2,5 @@
 *.toc linguist-detectable=false
 *.aux linguist-detectable=false
 *.log linguist-detectable=false
+*.spec linguist-detectable=false
 *.py linguist-language=Python
